@@ -94,8 +94,7 @@ The MCP server calls the MCPpedia public API — no API keys needed. Your creden
 
 ### Rate Limits
 
-- **Free**: 60 requests/minute (no sign-up needed)
-- **Pro**: Higher limits with API key (set `MCPPEDIA_API_KEY` env var)
+- 60 requests/minute per IP (no sign-up needed)
 
 ## Examples
 
@@ -139,7 +138,6 @@ The AI calls `get_server_details` with `security: true` for each server, compili
 
 | Environment Variable | Description |
 |---------------------|-------------|
-| `MCPPEDIA_API_KEY` | Optional. API key for higher rate limits |
 | `MCPPEDIA_API_URL` | Optional. Override API base URL (for self-hosting) |
 | `PORT` | Optional. HTTP server port (default: 8080, only used with `--http`) |
 
