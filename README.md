@@ -166,5 +166,5 @@ MIT
 ## Links
 
 - [MCPpedia](https://mcppedia.org) — Browse the full catalog
-- [GitHub](https://github.com/user/mcppedia) — Source code
+- [GitHub](https://github.com/BbekShr/mcp-server-mcppedia) — Source code
 - [npm](https://www.npmjs.com/package/mcp-server-mcppedia) — Package

@@ -1,9 +1,20 @@
 {
   "name": "mcp-server-mcppedia",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for discovering, evaluating, and comparing MCP servers via the MCPpedia catalog",
   "license": "MIT",
   "type": "module",
+  "homepage": "https://mcppedia.org/s/mcp-server-mcppedia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BbekShr/mcp-server-mcppedia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BbekShr/mcp-server-mcppedia/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "mcppedia-server": "./dist/index.js"
   },
@@ -12,6 +23,7 @@
     "dist"
   ],
   "scripts": {
+    "prepublishOnly": "tsc",
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",

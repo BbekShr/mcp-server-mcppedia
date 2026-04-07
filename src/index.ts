@@ -9,11 +9,24 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 
 
-function gradeFromScore(score: number): string {
-  if (score >= 80) return "A";
-  if (score >= 60) return "B";
-  if (score >= 40) return "C";
-  if (score >= 20) return "D";
+function num(val: unknown): number {
+  return typeof val === "number" && Number.isFinite(val) ? val : 0;
+}
+
+function str(val: unknown): string {
+  return typeof val === "string" ? val : "";
+}
+
+function arr(val: unknown): string[] {
+  return Array.isArray(val) ? val : [];
+}
+
+function gradeFromScore(score: unknown): string {
+  const n = num(score);
+  if (n >= 80) return "A";
+  if (n >= 60) return "B";
+  if (n >= 40) return "C";
+  if (n >= 20) return "D";
   return "F";
 }
 
@@ -28,24 +41,22 @@ function sanitize(input: unknown): string {
 }
 
 function formatServer(s: Record<string, unknown>): string {
-  const grade = gradeFromScore(s.score_total as number);
+  const grade = gradeFromScore(s.score_total);
   const parts = [
-    `**${sanitize(s.name)}** (${sanitize(s.slug)}) — Score: ${s.score_total}/100 [${grade}]`,
+    `**${sanitize(s.name)}** (${sanitize(s.slug)}) — Score: ${num(s.score_total)}/100 [${grade}]`,
   ];
   if (s.tagline) parts.push(`  ${sanitize(s.tagline)}`);
   const meta: string[] = [];
-  if ((s.github_stars as number) > 0)
-    meta.push(`${(s.github_stars as number).toLocaleString()} stars`);
-  if ((s.npm_weekly_downloads as number) > 0)
-    meta.push(
-      `${(s.npm_weekly_downloads as number).toLocaleString()} weekly downloads`
-    );
+  if (num(s.github_stars) > 0)
+    meta.push(`${num(s.github_stars).toLocaleString()} stars`);
+  if (num(s.npm_weekly_downloads) > 0)
+    meta.push(`${num(s.npm_weekly_downloads).toLocaleString()} weekly downloads`);
   if (s.token_efficiency_grade && s.token_efficiency_grade !== "unknown")
     meta.push(`Token efficiency: ${s.token_efficiency_grade}`);
-  if ((s.cve_count as number) > 0) meta.push(`CVEs: ${s.cve_count}`);
+  if (num(s.cve_count) > 0) meta.push(`CVEs: ${s.cve_count}`);
   if (s.health_status) meta.push(`Status: ${s.health_status}`);
-  if (s.categories)
-    meta.push(`Categories: ${(s.categories as string[]).join(", ")}`);
+  if (arr(s.categories).length)
+    meta.push(`Categories: ${arr(s.categories).join(", ")}`);
   if (meta.length) parts.push(`  ${meta.join(" · ")}`);
   return parts.join("\n");
 }
@@ -109,7 +120,9 @@ server.tool(
 
     if (error) {
       return errorText(
-        `Server "${slug}" not found. Try search_servers to find the correct slug.`
+        error.includes("unreachable") || error.includes("Rate limited")
+          ? error
+          : `Server "${slug}" not found. Try search_servers to find the correct slug.`
       );
     }
 
@@ -244,7 +257,7 @@ server.tool(
   }
 );
 
-// ─── Tool 4: compare_servers ────────────────────────────────
+// ─── Tool 3: compare_servers ────────────────────────────────
 
 server.tool(
   "compare_servers",
@@ -257,7 +270,9 @@ server.tool(
 
     if (error) {
       return errorText(
-        `No servers found for slugs: ${slugs.join(", ")}. Use search_servers to find correct slugs.`
+        error.includes("unreachable") || error.includes("Rate limited")
+          ? error
+          : `No servers found for slugs: ${slugs.join(", ")}. Use search_servers to find correct slugs.`
       );
     }
 
@@ -281,51 +296,18 @@ server.tool(
     sections.push(`| --- | ${names.map(() => "---").join(" | ")} |`);
 
     const rows = [
-      [
-        "Score",
-        (s: Record<string, unknown>) =>
-          `${s.score_total}/100 (${gradeFromScore(s.score_total as number)})`,
-      ],
-      [
-        "Security",
-        (s: Record<string, unknown>) => `${s.score_security}/30`,
-      ],
-      [
-        "Maintenance",
-        (s: Record<string, unknown>) => `${s.score_maintenance}/25`,
-      ],
-      [
-        "Efficiency",
-        (s: Record<string, unknown>) => `${s.score_efficiency}/20`,
-      ],
-      [
-        "Documentation",
-        (s: Record<string, unknown>) => `${s.score_documentation}/15`,
-      ],
-      [
-        "Compatibility",
-        (s: Record<string, unknown>) => `${s.score_compatibility}/10`,
-      ],
-      [
-        "Stars",
-        (s: Record<string, unknown>) =>
-          (s.github_stars as number).toLocaleString(),
-      ],
-      [
-        "Downloads/wk",
-        (s: Record<string, unknown>) =>
-          (s.npm_weekly_downloads as number).toLocaleString(),
-      ],
-      [
-        "Token Grade",
-        (s: Record<string, unknown>) => `${s.token_efficiency_grade}`,
-      ],
-      ["CVEs", (s: Record<string, unknown>) => `${s.cve_count}`],
-      ["Status", (s: Record<string, unknown>) => `${s.health_status}`],
-      [
-        "Transport",
-        (s: Record<string, unknown>) =>
-          (s.transport as string[]).join(", "),
+      ["Score", (s: Record<string, unknown>) => `${num(s.score_total)}/100 (${gradeFromScore(s.score_total)})`],
+      ["Security", (s: Record<string, unknown>) => `${num(s.score_security)}/30`],
+      ["Maintenance", (s: Record<string, unknown>) => `${num(s.score_maintenance)}/25`],
+      ["Efficiency", (s: Record<string, unknown>) => `${num(s.score_efficiency)}/20`],
+      ["Documentation", (s: Record<string, unknown>) => `${num(s.score_documentation)}/15`],
+      ["Compatibility", (s: Record<string, unknown>) => `${num(s.score_compatibility)}/10`],
+      ["Stars", (s: Record<string, unknown>) => num(s.github_stars).toLocaleString()],
+      ["Downloads/wk", (s: Record<string, unknown>) => num(s.npm_weekly_downloads).toLocaleString()],
+      ["Token Grade", (s: Record<string, unknown>) => str(s.token_efficiency_grade) || "N/A"],
+      ["CVEs", (s: Record<string, unknown>) => `${num(s.cve_count)}`],
+      ["Status", (s: Record<string, unknown>) => str(s.health_status) || "unknown"],
+      ["Transport", (s: Record<string, unknown>) => arr(s.transport).join(", ") || "N/A",
       ],
     ] as Array<[string, (s: Record<string, unknown>) => string]>;
 
@@ -335,17 +317,17 @@ server.tool(
 
     sections.push("");
     const best = [...servers].sort(
-      (a, b) => (b.score_total as number) - (a.score_total as number)
+      (a, b) => num(b.score_total) - num(a.score_total)
     )[0];
     sections.push(
-      `**Recommended**: ${sanitize(best.name)} (highest overall score: ${best.score_total}/100)`
+      `**Recommended**: ${sanitize(best.name)} (highest overall score: ${num(best.score_total)}/100)`
     );
 
     return { content: [{ type: "text", text: sections.join("\n") }] };
   }
 );
 
-// ─── Tool 5: get_install_config ─────────────────────────────
+// ─── Tool 4: get_install_config ─────────────────────────────
 
 server.tool(
   "get_install_config",
@@ -360,7 +342,9 @@ server.tool(
 
     if (error) {
       return errorText(
-        `Server "${slug}" not found. Try search_servers to find the correct slug.`
+        error.includes("unreachable") || error.includes("Rate limited")
+          ? error
+          : `Server "${slug}" not found. Try search_servers to find the correct slug.`
       );
     }
 
@@ -448,13 +432,12 @@ server.tool(
       sections.push("");
     }
 
-    const clients = (s.compatible_clients as string[]) || [];
+    const clients = arr(s.compatible_clients);
     if (clients.length) {
       sections.push(`Compatible clients: ${clients.join(", ")}`);
     }
-    sections.push(
-      `Transport: ${((s.transport as string[]) || []).join(", ")}`
-    );
+    sections.push(`Transport: ${arr(s.transport).join(", ") || "unknown"}`);
+
 
     return {
       content: [{ type: "text", text: sections.join("\n") }],
@@ -462,7 +445,7 @@ server.tool(
   }
 );
 
-// ─── Tool 6: get_trending ───────────────────────────────────
+// ─── Tool 5: get_trending ───────────────────────────────────
 
 server.tool(
   "get_trending",
@@ -513,11 +496,25 @@ async function main() {
   const port = parseInt(process.env.PORT || "8080", 10);
 
   if (mode === "http") {
-    const sessions = new Map<string, StreamableHTTPServerTransport>();
+    const MAX_SESSIONS = 100;
+    const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+    const sessions = new Map<string, { transport: StreamableHTTPServerTransport; createdAt: number }>();
+    const corsOrigin = process.env.CORS_ORIGIN || "*";
+
+    // Clean up expired sessions every 5 minutes
+    setInterval(() => {
+      const now = Date.now();
+      for (const [id, session] of sessions) {
+        if (now - session.createdAt > SESSION_TTL_MS) {
+          session.transport.close();
+          sessions.delete(id);
+        }
+      }
+    }, 5 * 60 * 1000);
 
     const httpServer = createServer(async (req, res) => {
       // CORS
-      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Origin", corsOrigin);
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "Content-Type, mcp-session-id");
 
@@ -536,11 +533,18 @@ async function main() {
       const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
       if (req.method === "POST" && !sessionId) {
+        // Reject if too many sessions
+        if (sessions.size >= MAX_SESSIONS) {
+          res.writeHead(503);
+          res.end("Too many sessions. Try again later.");
+          return;
+        }
+
         // New session
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (id) => {
-            sessions.set(id, transport);
+            sessions.set(id, { transport, createdAt: Date.now() });
           },
           onsessionclosed: (id) => {
             sessions.delete(id);
@@ -552,9 +556,9 @@ async function main() {
       }
 
       if (sessionId) {
-        const transport = sessions.get(sessionId);
-        if (transport) {
-          await transport.handleRequest(req, res);
+        const session = sessions.get(sessionId);
+        if (session) {
+          await session.transport.handleRequest(req, res);
         } else {
           res.writeHead(404);
           res.end("Session not found");
