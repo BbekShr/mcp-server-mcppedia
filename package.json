@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-mcppedia",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for discovering, evaluating, and comparing MCP servers via the MCPpedia catalog",
   "license": "MIT",
   "type": "module",
