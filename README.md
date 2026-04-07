@@ -21,7 +21,7 @@ Add to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "mcppedia": {
+    "MCPpedia": {
       "command": "npx",
       "args": ["-y", "mcp-server-mcppedia"]
     }
@@ -32,7 +32,7 @@ Add to your `claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add mcppedia -- npx -y mcp-server-mcppedia
+claude mcp add MCPpedia -- npx -y mcp-server-mcppedia
 ```
 
 ### Cursor
@@ -42,7 +42,7 @@ Add to `.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "mcppedia": {
+    "MCPpedia": {
       "command": "npx",
       "args": ["-y", "mcp-server-mcppedia"]
     }
@@ -57,7 +57,7 @@ Add to your MCP config:
 ```json
 {
   "mcpServers": {
-    "mcppedia": {
+    "MCPpedia": {
       "command": "npx",
       "args": ["-y", "mcp-server-mcppedia"]
     }
