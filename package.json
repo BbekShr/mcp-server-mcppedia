@@ -1,5 +1,5 @@
 {
-  "name": "@mcppedia/server",
+  "name": "mcp-server-mcppedia",
   "version": "0.1.0",
   "description": "MCP server for discovering, evaluating, and comparing MCP servers via the MCPpedia catalog",
   "license": "MIT",
