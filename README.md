@@ -23,7 +23,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "mcppedia": {
       "command": "npx",
-      "args": ["-y", "@mcppedia/server"]
+      "args": ["-y", "mcp-server-mcppedia"]
     }
   }
 }
@@ -32,7 +32,7 @@ Add to your `claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add mcppedia -- npx -y @mcppedia/server
+claude mcp add mcppedia -- npx -y mcp-server-mcppedia
 ```
 
 ### Cursor
@@ -44,7 +44,7 @@ Add to `.cursor/mcp.json`:
   "mcpServers": {
     "mcppedia": {
       "command": "npx",
-      "args": ["-y", "@mcppedia/server"]
+      "args": ["-y", "mcp-server-mcppedia"]
     }
   }
 }
@@ -59,7 +59,7 @@ Add to your MCP config:
   "mcpServers": {
     "mcppedia": {
       "command": "npx",
-      "args": ["-y", "@mcppedia/server"]
+      "args": ["-y", "mcp-server-mcppedia"]
     }
   }
 }
@@ -70,11 +70,11 @@ Add to your MCP config:
 Run the server with `--http` to expose it as an HTTP endpoint:
 
 ```bash
-npx @mcppedia/server --http
+npx mcp-server-mcppedia --http
 # Listening on port 8080
 ```
 
-Set a custom port with `PORT=3001 npx @mcppedia/server --http`.
+Set a custom port with `PORT=3001 npx mcp-server-mcppedia --http`.
 
 ## How It Works
 
@@ -89,8 +89,8 @@ The MCP server calls the MCPpedia public API — no API keys needed. Your creden
 
 | Transport | Use case | Command |
 |-----------|----------|---------|
-| **stdio** (default) | Local clients: Claude Desktop, Cursor, Claude Code | `npx @mcppedia/server` |
-| **HTTP/SSE** | Remote deployment, shared servers, web clients | `npx @mcppedia/server --http` |
+| **stdio** (default) | Local clients: Claude Desktop, Cursor, Claude Code | `npx mcp-server-mcppedia` |
+| **HTTP/SSE** | Remote deployment, shared servers, web clients | `npx mcp-server-mcppedia --http` |
 
 ### Rate Limits
 
@@ -169,4 +169,4 @@ MIT
 
 - [MCPpedia](https://mcppedia.org) — Browse the full catalog
 - [GitHub](https://github.com/user/mcppedia) — Source code
-- [npm](https://www.npmjs.com/package/@mcppedia/server) — Package
+- [npm](https://www.npmjs.com/package/mcp-server-mcppedia) — Package
