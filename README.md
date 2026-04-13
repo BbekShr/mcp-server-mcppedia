@@ -1,6 +1,6 @@
 # MCPpedia MCP Server
 
-[![MCPpedia Score](https://mcppedia.org/api/badge/mcp-server-mcppedia)](https://mcppedia.org/s/mcp-server-mcppedia) [![npm](https://img.shields.io/npm/v/mcp-server-mcppedia)](https://www.npmjs.com/package/mcp-server-mcppedia) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCPpedia Score](https://mcppedia.org/api/badge/mcp-server-mcppedia)](https://mcppedia.org/s/mcp-server-mcppedia) [![smithery badge](https://smithery.ai/badge/bbeksh/mcppedia)](https://smithery.ai/servers/bbeksh/mcppedia) [![npm](https://img.shields.io/npm/v/mcp-server-mcppedia)](https://www.npmjs.com/package/mcp-server-mcppedia) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Search, evaluate, and compare 17,000+ MCP servers from the [MCPpedia](https://mcppedia.org) catalog. Every server is scored on security, maintenance, efficiency, documentation, and compatibility — with real CVE scanning and tool poisoning detection.
 
