@@ -1,0 +1,45 @@
+{
+  "dxt_version": "0.1",
+  "name": "mcppedia",
+  "display_name": "MCPpedia",
+  "version": "0.2.0",
+  "description": "Discover, evaluate, and compare 17K+ MCP servers with security, maintenance, efficiency, documentation, and compatibility scores.",
+  "long_description": "The MCPpedia extension gives Claude a catalog of every published MCP server with daily-refreshed quality and security scores. Search, compare, audit your installed servers, and get ready-to-paste install configs for Claude Desktop, Claude Code, Cursor, or Windsurf.",
+  "author": {
+    "name": "MCPpedia",
+    "url": "https://mcppedia.org"
+  },
+  "homepage": "https://mcppedia.org",
+  "documentation": "https://mcppedia.org/s/mcp-server-mcppedia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BbekShr/mcp-server-mcppedia"
+  },
+  "license": "MIT",
+  "keywords": ["mcp", "catalog", "security", "discovery", "audit"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"]
+    }
+  },
+  "tools": [
+    { "name": "search_servers", "description": "Search 17K+ scored MCP servers." },
+    { "name": "get_server_details", "description": "Full server info + optional security report." },
+    { "name": "compare_servers", "description": "Side-by-side comparison." },
+    { "name": "get_install_config", "description": "Ready-to-paste install config." },
+    { "name": "get_trending", "description": "Top-rated, most-starred, or newest servers." },
+    { "name": "get_category_tree", "description": "Browse every category with server counts." },
+    { "name": "what_changed", "description": "Servers rescored since a given timestamp." }
+  ],
+  "prompts": [
+    { "name": "audit-my-mcp-setup", "description": "Audit every server you have installed." },
+    { "name": "find-alternative", "description": "Find a safer / higher-scored alternative." },
+    { "name": "security-review", "description": "Long-form security writeup." }
+  ],
+  "compatibility": {
+    "runtimes": { "node": ">=20" }
+  }
+}

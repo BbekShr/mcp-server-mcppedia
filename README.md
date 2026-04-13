@@ -11,8 +11,28 @@ Search, evaluate, and compare 17,000+ MCP servers from the [MCPpedia](https://mc
 | `search_servers` | Search by keyword, category, or minimum score |
 | `get_server_details` | Full details: scoring breakdown, tools list, install configs. Pass `security: true` for a deep security report with CVE/poisoning/injection evidence |
 | `compare_servers` | Side-by-side comparison across all 5 scoring dimensions |
-| `get_install_config` | Ready-to-use config for Claude Desktop, Cursor, Claude Code, Windsurf |
+| `get_install_config` | Ready-to-use config for Claude Desktop, Cursor, Claude Code, Windsurf (elicits the client if omitted) |
 | `get_trending` | Top-rated, most starred, or newest servers by category |
+| `get_category_tree` | Every category with server counts — call before `search_servers` to narrow scope |
+| `what_changed` | Servers rescored since a given ISO-8601 timestamp |
+
+Every tool returns both a markdown summary **and** structured JSON (`structuredContent`) so MCP clients can render scores/tables natively. List-shaped tools also emit `resource_link` content blocks pointing at `mcppedia://server/{slug}` so users can click-to-attach a result.
+
+## Resources
+
+| URI | Description |
+|-----|-------------|
+| `mcppedia://trending` | Top 20 servers by score |
+| `mcppedia://server/{slug}` | Full record for one server |
+| `mcppedia://category/{name}` | Top servers in a category |
+
+## Prompts
+
+| Prompt | Args | What it does |
+|--------|------|--------------|
+| `audit-my-mcp-setup` | — | Audits every MCP server you have installed |
+| `find-alternative` | `slug` | Suggests a safer / higher-scored replacement |
+| `security-review` | `slug` | Long-form security writeup |
 
 ## Install
 
@@ -67,16 +87,24 @@ Add to your MCP config:
 }
 ```
 
-### Remote (HTTP/SSE)
+### Remote (Streamable HTTP)
 
-Run the server with `--http` to expose it as an HTTP endpoint:
+Run the server with `--http` to expose it as a Streamable HTTP endpoint (MCP 2025-03-26 transport):
 
 ```bash
 npx mcp-server-mcppedia --http
-# Listening on port 8080
+# Listening on port 8080, endpoint POST /mcp, health GET /healthz
 ```
 
-Set a custom port with `PORT=3001 npx mcp-server-mcppedia --http`.
+Set a custom port with `PORT=3001 npx mcp-server-mcppedia --http`. `CORS_ORIGIN` controls the browser CORS allow-list.
+
+### Desktop Extension (DXT)
+
+A `manifest.json` is included for one-click install in Claude Desktop. Zip the package with `dxt pack` (from `@anthropic-ai/dxt`) and distribute the resulting `.dxt`.
+
+### Smithery
+
+A `smithery.yaml` + `Dockerfile` are included — deploy as a hosted MCP server at [smithery.ai](https://smithery.ai).
 
 ## How It Works
 
@@ -142,6 +170,8 @@ The AI calls `get_server_details` with `security: true` for each server, compili
 |---------------------|-------------|
 | `MCPPEDIA_API_URL` | Optional. Override API base URL (for self-hosting) |
 | `PORT` | Optional. HTTP server port (default: 8080, only used with `--http`) |
+| `CORS_ORIGIN` | Optional. CORS allow-list for HTTP mode (default: `*`) |
+| `MCPPEDIA_TELEMETRY` | Optional. Set to `1` to log tool-call latency to stderr |
 
 ## Compatible Clients
 

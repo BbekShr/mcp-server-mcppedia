@@ -8,9 +8,9 @@ function getConfig(): { baseUrl: string } {
   return { baseUrl };
 }
 
-// ─── Response cache ─────────────────────────────────────────
-// Short TTL cache to avoid hitting the API for repeated queries.
-// Trending/search results cached 2 min, detail/security 5 min.
+// ─── Response cache with ETag support ───────────────────────
+// Short TTL, plus If-None-Match revalidation so stable resources survive
+// beyond TTL without a full payload refetch.
 
 const TTL: Record<string, number> = {
   search: 120_000,
@@ -19,37 +19,52 @@ const TTL: Record<string, number> = {
   security: 300_000,
   compare: 120_000,
   install: 600_000,
+  categories: 3_600_000, // categories barely change — 1h
+  changes: 60_000,       // deltas refresh fast
 };
 
-const cache = new Map<string, { data: unknown; expiresAt: number }>();
+type CacheEntry = { data: unknown; etag?: string; expiresAt: number };
+const cache = new Map<string, CacheEntry>();
 
-function getCached(key: string): unknown | undefined {
+function getCached(key: string): CacheEntry | undefined {
   const entry = cache.get(key);
   if (!entry) return undefined;
-  if (Date.now() > entry.expiresAt) {
-    cache.delete(key);
-    return undefined;
-  }
-  return entry.data;
+  return entry;
 }
 
-function setCache(key: string, data: unknown, action: string): void {
+function setCache(
+  key: string,
+  data: unknown,
+  action: string,
+  etag?: string
+): void {
   const ttl = TTL[action] || 120_000;
-  cache.set(key, { data, expiresAt: Date.now() + ttl });
+  cache.set(key, { data, etag, expiresAt: Date.now() + ttl });
 
-  // Evict old entries if cache grows too large (max 200 entries)
   if (cache.size > 200) {
     const now = Date.now();
     for (const [k, v] of cache) {
       if (v.expiresAt < now) cache.delete(k);
     }
-    // If still too large, drop oldest half
     if (cache.size > 200) {
       const keys = [...cache.keys()];
-      for (let i = 0; i < keys.length / 2; i++) {
-        cache.delete(keys[i]);
-      }
+      for (let i = 0; i < keys.length / 2; i++) cache.delete(keys[i]);
     }
+  }
+}
+
+// ─── Telemetry hook ─────────────────────────────────────────
+// Set MCPPEDIA_TELEMETRY=1 to emit stderr logs of tool + latency. Safe for
+// stdio transport because stdio uses stdout for MCP framing, not stderr.
+
+const telemetryEnabled = process.env.MCPPEDIA_TELEMETRY === "1";
+
+export function logTelemetry(event: Record<string, unknown>): void {
+  if (!telemetryEnabled) return;
+  try {
+    console.error(JSON.stringify({ ts: Date.now(), ...event }));
+  } catch {
+    /* swallow */
   }
 }
 
@@ -60,27 +75,46 @@ export async function mcpApiCall(
   params: Record<string, unknown>
 ): Promise<{ data?: unknown; error?: string }> {
   const cacheKey = `${action}:${JSON.stringify(params)}`;
-
-  // Check cache first
   const cached = getCached(cacheKey);
-  if (cached !== undefined) {
-    return { data: cached };
+
+  // Still-fresh cache hit — no network
+  if (cached && Date.now() <= cached.expiresAt) {
+    logTelemetry({ event: "cache_hit", action });
+    return { data: cached.data };
   }
 
   const { baseUrl } = getConfig();
   const url = `${baseUrl}/api/mcp`;
+  const started = Date.now();
 
   let res: Response;
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (cached?.etag) headers["If-None-Match"] = cached.etag;
+
     res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ action, params }),
       signal: AbortSignal.timeout(15_000),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
+    logTelemetry({ event: "fetch_error", action, error: msg });
     return { error: `MCPpedia API unreachable: ${msg}` };
+  }
+
+  const latency = Date.now() - started;
+
+  // 304: server confirmed cache is still good — extend TTL
+  if (res.status === 304 && cached) {
+    cache.set(cacheKey, {
+      data: cached.data,
+      etag: cached.etag,
+      expiresAt: Date.now() + (TTL[action] || 120_000),
+    });
+    logTelemetry({ event: "etag_revalidate", action, latency });
+    return { data: cached.data };
   }
 
   if (res.status === 429) {
@@ -91,18 +125,16 @@ export async function mcpApiCall(
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     return {
-      error:
-        (body as Record<string, string>).error || `API error: ${res.status}`,
+      error: (body as Record<string, string>).error || `API error: ${res.status}`,
     };
   }
 
   const body = await res.json().catch(() => ({}));
   const data = (body as Record<string, unknown>).data;
+  const etag = res.headers.get("ETag") || undefined;
 
-  // Cache successful responses
-  if (data) {
-    setCache(cacheKey, data, action);
-  }
+  if (data !== undefined) setCache(cacheKey, data, action, etag);
 
+  logTelemetry({ event: "fetch_ok", action, latency, cached: false });
   return { data };
 }

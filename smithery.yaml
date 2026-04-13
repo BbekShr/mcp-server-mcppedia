@@ -1,0 +1,33 @@
+# Smithery deployment config. https://smithery.ai/docs
+# Smithery uses this to host & run the HTTP transport.
+startCommand:
+  type: http
+  configSchema:
+    type: object
+    properties:
+      mcppediaApiUrl:
+        type: string
+        title: MCPpedia API URL
+        description: Override the default https://mcppedia.org API base.
+        default: https://mcppedia.org
+      telemetry:
+        type: boolean
+        title: Enable telemetry
+        description: Log tool call latency to stderr (safe; stdio uses stdout for framing).
+        default: false
+    additionalProperties: false
+  commandFunction: |
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js', '--http'],
+      env: {
+        PORT: '8080',
+        MCPPEDIA_API_URL: config.mcppediaApiUrl || 'https://mcppedia.org',
+        MCPPEDIA_TELEMETRY: config.telemetry ? '1' : '0',
+      },
+    })
+  exampleConfig:
+    mcppediaApiUrl: https://mcppedia.org
+    telemetry: false
+build:
+  dockerfile: Dockerfile
