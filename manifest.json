@@ -35,9 +35,23 @@
     { "name": "what_changed", "description": "Servers rescored since a given timestamp." }
   ],
   "prompts": [
-    { "name": "audit-my-mcp-setup", "description": "Audit every server you have installed." },
-    { "name": "find-alternative", "description": "Find a safer / higher-scored alternative." },
-    { "name": "security-review", "description": "Long-form security writeup." }
+    {
+      "name": "audit-my-mcp-setup",
+      "description": "Audit every server you have installed.",
+      "text": "Audit every MCP server I have installed using MCPpedia: call get_server_details with security=true for each, then summarize KEEP / REVIEW / REPLACE verdicts."
+    },
+    {
+      "name": "find-alternative",
+      "description": "Find a safer / higher-scored alternative.",
+      "arguments": ["slug"],
+      "text": "Given the MCP server slug \"${arguments.slug}\", call get_server_details with security=true, then search_servers in the same categories with a higher min_score, and compare_servers with the top alternatives. Recommend the best swap."
+    },
+    {
+      "name": "security-review",
+      "description": "Long-form security writeup.",
+      "arguments": ["slug"],
+      "text": "Produce a thorough security review of the MCP server \"${arguments.slug}\": call get_server_details with security=true and without, then write a narrative review covering attack surface, dependencies, license, and mitigations."
+    }
   ],
   "compatibility": {
     "runtimes": { "node": ">=20" }
