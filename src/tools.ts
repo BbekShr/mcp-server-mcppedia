@@ -122,9 +122,12 @@ export function registerTools(server: McpServer): void {
         return {
           content: [
             { type: "text" as const, text: header + lines },
-            ...servers.map((s) =>
-              resourceLink(str(s.slug), str(s.name), str(s.tagline))
-            ),
+            // Cap resource_link blocks at 5: the rest stay reachable via the
+            // mcppedia://server/{slug} resource template, and capping keeps
+            // large-limit responses lean.
+            ...servers
+              .slice(0, 5)
+              .map((s) => resourceLink(str(s.slug), str(s.name), str(s.tagline))),
           ],
           structuredContent: { count: servers.length, servers: projected },
         };
@@ -369,7 +372,12 @@ export function registerTools(server: McpServer): void {
         return {
           content: [
             { type: "text" as const, text: lines.join("\n") },
-            ...servers.map((s) => resourceLink(str(s.slug), str(s.name), str(s.tagline))),
+            // Cap resource_link blocks at 5: the rest stay reachable via the
+            // mcppedia://server/{slug} resource template, and capping keeps
+            // large-limit responses lean.
+            ...servers
+              .slice(0, 5)
+              .map((s) => resourceLink(str(s.slug), str(s.name), str(s.tagline))),
           ],
           structuredContent: {
             servers: servers.map(projectServer),
@@ -567,9 +575,12 @@ export function registerTools(server: McpServer): void {
         return {
           content: [
             { type: "text" as const, text: header + lines },
-            ...servers.map((s) =>
-              resourceLink(str(s.slug), str(s.name), str(s.tagline))
-            ),
+            // Cap resource_link blocks at 5: the rest stay reachable via the
+            // mcppedia://server/{slug} resource template, and capping keeps
+            // large-limit responses lean.
+            ...servers
+              .slice(0, 5)
+              .map((s) => resourceLink(str(s.slug), str(s.name), str(s.tagline))),
           ],
           structuredContent: {
             count: servers.length,
@@ -657,9 +668,12 @@ export function registerTools(server: McpServer): void {
         return {
           content: [
             { type: "text" as const, text: header + lines },
-            ...servers.map((s) =>
-              resourceLink(str(s.slug), str(s.name), str(s.tagline))
-            ),
+            // Cap resource_link blocks at 5: the rest stay reachable via the
+            // mcppedia://server/{slug} resource template, and capping keeps
+            // large-limit responses lean.
+            ...servers
+              .slice(0, 5)
+              .map((s) => resourceLink(str(s.slug), str(s.name), str(s.tagline))),
           ],
           structuredContent: { count: servers.length, servers: servers.map(projectServer) },
         };
