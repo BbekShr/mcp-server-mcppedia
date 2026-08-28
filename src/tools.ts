@@ -43,6 +43,34 @@ const serverSummarySchema = z.object({
   transport: z.array(z.string()),
 });
 
+// get_server_details returns one of two shapes depending on `security`: the
+// full-details projection (tagline/url/scores/stats/categories/transport) or
+// the security-report summary (verdict/score/cve_count/...). Fields unique to
+// either branch are optional so both are valid against this one schema.
+const serverDetailsOutputShape = {
+  slug: z.string(),
+  name: z.string(),
+  tagline: z.string().optional(),
+  url: z.string().optional(),
+  scores: z.object(scoresShape).optional(),
+  stats: z.object({
+    github_stars: z.number(),
+    npm_weekly_downloads: z.number(),
+    cve_count: z.number(),
+    token_efficiency_grade: z.string().nullable(),
+    health_status: z.string().nullable(),
+  }).optional(),
+  categories: z.array(z.string()).optional(),
+  transport: z.array(z.string()).optional(),
+  verdict: z.string().optional(),
+  score: z.number().optional(),
+  cve_count: z.number().optional(),
+  has_tool_poisoning: z.boolean().optional(),
+  has_code_execution: z.boolean().optional(),
+  has_injection_risk: z.boolean().optional(),
+  verified: z.boolean().optional(),
+};
+
 // Track tool latency for telemetry.
 async function timed<T>(tool: string, fn: () => Promise<T>): Promise<T> {
   const started = Date.now();
@@ -115,6 +143,7 @@ export function registerTools(server: McpServer): void {
         slug: z.string(),
         security: z.boolean().optional(),
       },
+      outputSchema: serverDetailsOutputShape,
     },
     async ({ slug, security }) =>
       timed("get_server_details", async () => {
@@ -122,9 +151,14 @@ export function registerTools(server: McpServer): void {
         const { data, error } = await mcpApiCall(action, { slug });
         if (error) {
           return errorText(
-            error.includes("unreachable") || error.includes("Rate limited")
-              ? error
-              : `Server "${sanitize(slug)}" not found. Try search_servers to find the correct slug.`
+            error.toLowerCase().includes("not found") || error.includes("404")
+              ? `Server "${sanitize(slug)}" not found. Try search_servers to find the correct slug.`
+              : error
+          );
+        }
+        if (!data) {
+          return errorText(
+            `Server "${sanitize(slug)}" not found. Try search_servers to find the correct slug.`
           );
         }
 
@@ -290,9 +324,9 @@ export function registerTools(server: McpServer): void {
         const { data, error } = await mcpApiCall("compare", { slugs });
         if (error) {
           return errorText(
-            error.includes("unreachable") || error.includes("Rate limited")
-              ? error
-              : `No servers found for slugs: ${slugs.join(", ")}.`
+            error.toLowerCase().includes("not found") || error.includes("404")
+              ? `No servers found for slugs: ${slugs.join(", ")}.`
+              : error
           );
         }
 
@@ -406,9 +440,14 @@ export function registerTools(server: McpServer): void {
         const { data, error } = await mcpApiCall("install", { slug });
         if (error) {
           return errorText(
-            error.includes("unreachable") || error.includes("Rate limited")
-              ? error
-              : `Server "${sanitize(slug)}" not found. Try search_servers to find the correct slug.`
+            error.toLowerCase().includes("not found") || error.includes("404")
+              ? `Server "${sanitize(slug)}" not found. Try search_servers to find the correct slug.`
+              : error
+          );
+        }
+        if (!data) {
+          return errorText(
+            `Server "${sanitize(slug)}" not found. Try search_servers to find the correct slug.`
           );
         }
 
@@ -460,6 +499,7 @@ export function registerTools(server: McpServer): void {
         if (Object.keys(envInstructions).length) {
           sections.push("## Environment Variables");
           for (const [key, info] of Object.entries(envInstructions)) {
+            if (!info) continue;
             sections.push(`- **${key}**: ${sanitize(info.label)}`);
             if (info.url) sections.push(`  Get it: ${info.url}`);
             if (info.steps) sections.push(`  Steps: ${sanitize(info.steps)}`);
@@ -593,6 +633,10 @@ export function registerTools(server: McpServer): void {
           .string()
           .describe("ISO-8601 timestamp, e.g. 2026-04-01T00:00:00Z"),
         limit: z.number().min(1).max(50).optional(),
+      },
+      outputSchema: {
+        count: z.number(),
+        servers: z.array(serverSummarySchema),
       },
     },
     async ({ since, limit }) =>
