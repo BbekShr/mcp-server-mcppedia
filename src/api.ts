@@ -32,6 +32,15 @@ function getCached(key: string): CacheEntry | undefined {
   return entry;
 }
 
+// Re-insert a key so it moves to the end of Map iteration order. Map.set on
+// an existing key does not reorder it, so callers that want the eviction
+// below (delete oldest half) to evict cold entries instead of hot ones must
+// delete-then-set on every touch (fresh hit or 304 revalidation).
+function touchCache(key: string, entry: CacheEntry): void {
+  cache.delete(key);
+  cache.set(key, entry);
+}
+
 function setCache(
   key: string,
   data: unknown,
@@ -68,6 +77,14 @@ export function logTelemetry(event: Record<string, unknown>): void {
   }
 }
 
+// ─── In-flight request de-duplication ──────────────────────
+// Concurrent calls for the same action+params await one shared fetch instead
+// of firing duplicate requests. Entries are removed as soon as the call
+// settles (success or error), so a failure is never cached beyond the
+// window of callers that were already waiting on it.
+
+const inFlight = new Map<string, Promise<{ data?: unknown; error?: string }>>();
+
 // ─── API client ─────────────────────────────────────────────
 
 export async function mcpApiCall(
@@ -80,9 +97,28 @@ export async function mcpApiCall(
   // Still-fresh cache hit — no network
   if (cached && Date.now() <= cached.expiresAt) {
     logTelemetry({ event: "cache_hit", action });
+    touchCache(cacheKey, cached);
     return { data: cached.data };
   }
 
+  const existing = inFlight.get(cacheKey);
+  if (existing) return existing;
+
+  const promise = fetchFresh(action, params, cacheKey, cached);
+  inFlight.set(cacheKey, promise);
+  try {
+    return await promise;
+  } finally {
+    inFlight.delete(cacheKey);
+  }
+}
+
+async function fetchFresh(
+  action: string,
+  params: Record<string, unknown>,
+  cacheKey: string,
+  cached: CacheEntry | undefined
+): Promise<{ data?: unknown; error?: string }> {
   const { baseUrl } = getConfig();
   const url = `${baseUrl}/api/mcp`;
   const started = Date.now();
@@ -108,7 +144,7 @@ export async function mcpApiCall(
 
   // 304: server confirmed cache is still good — extend TTL
   if (res.status === 304 && cached) {
-    cache.set(cacheKey, {
+    touchCache(cacheKey, {
       data: cached.data,
       etag: cached.etag,
       expiresAt: Date.now() + (TTL[action] || 120_000),

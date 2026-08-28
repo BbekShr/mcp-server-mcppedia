@@ -22,12 +22,17 @@ export function gradeFromScore(score: unknown): string {
 }
 
 // Strip chars that could be used for markdown/prompt injection and cap length
-// to prevent context flooding.
+// to prevent context flooding. Catalog fields are third-party content, so
+// newlines (which could smuggle fake role markers or fenced blocks) are
+// collapsed to spaces, and backticks (code-fence/inline-code injection) are
+// stripped outright.
 export function sanitize(input: unknown): string {
   if (typeof input !== "string") return String(input ?? "");
   return input
     .replace(/[<>]/g, "")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\r?\n+/g, " ")
+    .replace(/`/g, "")
     .slice(0, 500);
 }
 

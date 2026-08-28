@@ -2,7 +2,7 @@
   "dxt_version": "0.1",
   "name": "mcppedia",
   "display_name": "MCPpedia",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Discover, evaluate, and compare 17K+ MCP servers with security, maintenance, efficiency, documentation, and compatibility scores.",
   "long_description": "The MCPpedia extension gives Claude a catalog of every published MCP server with daily-refreshed quality and security scores. Search, compare, audit your installed servers, and get ready-to-paste install configs for Claude Desktop, Claude Code, Cursor, or Windsurf.",
   "author": {

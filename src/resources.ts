@@ -36,7 +36,8 @@ export function registerResources(server: McpServer): void {
     "server",
     new ResourceTemplate("mcppedia://server/{slug}", {
       list: async () => {
-        const { data } = await mcpApiCall("trending", { sort: "score", limit: 20 });
+        const { data, error } = await mcpApiCall("trending", { sort: "score", limit: 20 });
+        if (error) throw new Error(error);
         const servers = arr<Record<string, unknown>>(data);
         return {
           resources: servers.map((s) => ({
@@ -74,7 +75,8 @@ export function registerResources(server: McpServer): void {
     "category",
     new ResourceTemplate("mcppedia://category/{name}", {
       list: async () => {
-        const { data } = await mcpApiCall("categories", {});
+        const { data, error } = await mcpApiCall("categories", {});
+        if (error) throw new Error(error);
         const cats = arr<{ slug: string; name: string; count: number }>(data);
         return {
           resources: cats.map((c) => ({

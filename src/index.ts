@@ -107,18 +107,34 @@ async function main() {
           return;
         }
 
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
-          onsessioninitialized: (id) => {
-            sessions.set(id, { transport, createdAt: Date.now() });
-          },
-          onsessionclosed: (id) => {
-            sessions.delete(id);
-          },
-        });
-        const server = buildServer();
-        await server.connect(transport);
-        await transport.handleRequest(req, res);
+        try {
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (id) => {
+              sessions.set(id, { transport, createdAt: Date.now() });
+            },
+            onsessionclosed: (id) => {
+              sessions.delete(id);
+            },
+          });
+          const server = buildServer();
+          await server.connect(transport);
+          await transport.handleRequest(req, res);
+        } catch (err) {
+          console.error("Failed to bootstrap session:", err);
+          if (!res.headersSent) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                error: { code: -32603, message: "Internal server error" },
+                id: null,
+              })
+            );
+          } else {
+            res.end();
+          }
+        }
         return;
       }
 
@@ -140,6 +156,18 @@ async function main() {
     httpServer.listen(port, () => {
       console.error(`MCPpedia server (HTTP) listening on port ${port}`);
     });
+
+    // Graceful shutdown — close active sessions before exiting.
+    const shutdown = (signal: string) => {
+      console.error(`Received ${signal}, shutting down...`);
+      for (const [id, session] of sessions) {
+        session.transport.close();
+        sessions.delete(id);
+      }
+      httpServer.close(() => process.exit(0));
+    };
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
   } else {
     const transport = new StdioServerTransport();
     const server = buildServer();

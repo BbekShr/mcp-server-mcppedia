@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-mcppedia",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for discovering, evaluating, and comparing MCP servers via the MCPpedia catalog",
   "license": "MIT",
   "type": "module",
@@ -35,6 +35,14 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.25.0"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.15",
+    "body-parser": "2.3.0",
+    "fast-uri": "3.1.5",
+    "hono": "4.12.34",
+    "ip-address": "10.3.1",
+    "qs": "6.15.2"
   },
   "devDependencies": {
     "@types/node": "^20",
